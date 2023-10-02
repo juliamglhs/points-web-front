@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Navegar para o diretório do projeto
+cd /Caminho/No/Seu/Servidor
+
+# Instalar as dependências do projeto
+npm install
+

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Instalar o Node.js e o npm
+curl -sL https://rpm.nodesource.com/setup_18.x | bash -
+yum install -y nodejs

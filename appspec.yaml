@@ -1,0 +1,13 @@
+version: 0.0
+os: linux
+files:
+  - source: /web-front/dist
+    destination: s3://pointsapp-bucket
+  BeforeInstall:
+    - location: scripts/install_dependencies
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: scripts/after_install
+      timeout: 300
+      runas: root

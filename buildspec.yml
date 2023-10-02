@@ -1,0 +1,44 @@
+version: 0.2
+
+env:
+  variables:
+    REPOSITORY_URI: "public.ecr.aws/k0p9r0m3/pointsapp"
+  secrets-manager:
+    DOCKERHUB_PASS: "arn:aws:secretsmanager:us-east-1:812826123913:secret:secret-codebuild-tD1uhI"
+    DOCKERHUB_USERNAME: "arn:aws:secretsmanager:us-east-1:812826123913:secret:secret-codebuild-tD1uhI"
+
+phases:
+  install:
+    runtime-versions:
+      docker: 18
+    commands:
+      - yum install -y aws-cli
+      - aws --version
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2 &
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+
+  pre_build:
+    commands:
+      - echo "Testando conectividade com o Amazon ECR..."
+      - aws ecr get-login --no-include-email --region us-east-1
+      - aws --version
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/k0p9r0m3
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - echo Build completed on `date`
+      - echo "Construindo a imagem Docker..."
+      - docker build -t pointsapp .
+      - echo "Tagging Docker image..."
+      - docker tag pointsapp:latest public.ecr.aws/k0p9r0m3/pointsapp:latest
+      - echo '[{"name":"pointsapp:latest","imageUri":"'$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION'"}]' > imagedefinitions.json
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo "Empurrando imagem para o Amazon ECR..."
+      - docker push docker push public.ecr.aws/k0p9r0m3/pointsapp:latest
+  artifacts:
+    files: 
+      imagedefinitions.json
+
